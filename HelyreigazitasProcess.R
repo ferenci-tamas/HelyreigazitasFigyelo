@@ -95,7 +95,8 @@ cszek <- c("Juhász Péter", "Gyurcsány Ferenc", "Czeglédy Csaba", "Vona Gábo
            "Simicska Lajos", "Botka László", "Ujhelyi István",
            "Mészáros Lőrinc", "Bajnai Gordon", "Magyar Helsinki Bizottság",
            "Gyermekrák Alapítvány", "Bánó András", "Vasvári Csaba",
-           "Sneider Tamás", "Hadházy Ákos", "Pikó András", "Soros György")
+           "Sneider Tamás", "Hadházy Ákos", "Pikó András", "Soros György",
+           "Magyar Péter", "Médiaszolgáltatás-támogató és Vagyonkezelő Alap (MTVA)")
 
 setequal(cszek, unique(temp$CimkeSzoveg))
 
@@ -103,7 +104,7 @@ cszek <- merge(
   unique(temp[, .(CimkeSzoveg, CimkeID)]),
   data.table(CimkeSzoveg = cszek,
              size = c(0.3, 0.3, 0.5, 0.65, 0.45, 0.7, 0.5, 0.5, 0.7, 0.3, 0.6, 0.45, 0.7, 0.4,
-                      0.8, 0.3, 0.4, 0.6, 0.5, 0.4, 0.4)),
+                      0.8, 0.3, 0.4, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4)),
   by = "CimkeSzoveg")
 
 jsonlite::write_json(list(data = cszek[, .(CimkeID, CimkeSzoveg)]), "cszek.json", na = "string")
