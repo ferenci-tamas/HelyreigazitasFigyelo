@@ -599,7 +599,7 @@
 		makeplotKeses();
 		makeplotJeloles();
 
-		Object.entries(cszdata).map(x => {
+		Object.entries(cszdata.data).map(x => {
 			$('#cimkeSzofelho').append($('<option></option>').attr('value', x[1].CimkeID).text(x[1].CimkeSzoveg));
 		})
 	});	
