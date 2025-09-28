@@ -317,29 +317,70 @@
 		}
 	}
 	
-	$(document).ready(async function () {
+	async function storeInIndexedDB(storeName, key, value) {
+		return new Promise((resolve, reject) => {
+			const request = indexedDB.open('MyDatabase', 1);
 
-		const dsHI = new DecompressionStream('gzip');
-		const dsHII = new DecompressionStream('gzip');
-		const dsCSZ = new DecompressionStream('gzip');
-		
-		const respHI = await fetch('helyreigazitasok.json.gz');
-		const ddsHI = respHI.body.pipeThrough(dsHI);
-		const dtHI = await new Response(ddsHI).text();
-		localStorage.setItem('helyreigazitasokdata', JSON.stringify(JSON.parse(dtHI)));
-		
-		const respHII = await fetch('helyreigido.json.gz');
-		const ddsHII = respHII.body.pipeThrough(dsHII);
-		const dtHII = await new Response(ddsHII).text();
-		localStorage.setItem('helyreigidodata', JSON.stringify(JSON.parse(dtHII)));
-		
-		const respCSZ = await fetch('cszek.json.gz');
-		const ddsCSZ = respCSZ.body.pipeThrough(dsCSZ);
-		const dtCSZ = await new Response(ddsCSZ).text();
-		localStorage.setItem('cszdata', JSON.stringify(JSON.parse(dtCSZ)));
+			request.onupgradeneeded = (event) => {
+				const db = event.target.result;
+				if (!db.objectStoreNames.contains(storeName)) {
+					db.createObjectStore(storeName);
+				}
+			};
+
+			request.onsuccess = (event) => {
+				const db = event.target.result;
+				const transaction = db.transaction([storeName], 'readwrite');
+				const store = transaction.objectStore(storeName);
+				const putRequest = store.put(value, key);
+
+				putRequest.onsuccess = () => resolve();
+				putRequest.onerror = (e) => reject(e.target.error);
+			};
+
+			request.onerror = (e) => reject(e.target.error);
+		});
+	}
+
+	async function fetchAndStoreCompressedJSON(url, storeName, key) {
+		const decompressionStream = new DecompressionStream('gzip');
+		const response = await fetch(url);
+		const decompressed = response.body.pipeThrough(decompressionStream);
+		const text = await new Response(decompressed).text();
+		const jsonData = JSON.parse(text);
+		await storeInIndexedDB(storeName, key, jsonData);
+	}
 	
+	function getFromIndexedDB(storeName, key) {
+		return new Promise((resolve, reject) => {
+			const request = indexedDB.open('MyDatabase', 1);
+
+			request.onsuccess = (event) => {
+				const db = event.target.result;
+				const transaction = db.transaction([storeName], 'readonly');
+				const store = transaction.objectStore(storeName);
+				const getRequest = store.get(key);
+
+				getRequest.onsuccess = () => resolve(getRequest.result);
+				getRequest.onerror = (e) => reject(e.target.error);
+			};
+
+			request.onerror = (e) => reject(e.target.error);
+		});
+	}
+	
+	$(document).ready(async function () {
+		
+		await fetchAndStoreCompressedJSON('helyreigazitasok.json.gz', 'dataStore', 'helyreigazitasokdata');
+		await fetchAndStoreCompressedJSON('helyreigido.json.gz', 'dataStore', 'helyreigidodata');
+		await fetchAndStoreCompressedJSON('cszek.json.gz', 'dataStore', 'cszdata');
+
+		const helyreigazitasokdata = await getFromIndexedDB('dataStore', 'helyreigazitasokdata');
+		const helyreigidodata = await getFromIndexedDB('dataStore', 'helyreigidodata');
+		const cszdata = await getFromIndexedDB('dataStore', 'cszdata');
+		
 		var dt = $('#example').DataTable({
-		data: JSON.parse(localStorage.getItem('helyreigazitasokdata')).data,
+		data: helyreigazitasokdata.data,
 		paging: true,
 		deferRender: true,
 		processing: true,
@@ -557,9 +598,8 @@
 		makeplotCimkekIdoben();
 		makeplotKeses();
 		makeplotJeloles();
-		
-		var cszres = JSON.parse(localStorage.getItem('cszdata')).data;
-		Object.entries(cszres).map(x => {
+
+		Object.entries(cszdata).map(x => {
 			$('#cimkeSzofelho').append($('<option></option>').attr('value', x[1].CimkeID).text(x[1].CimkeSzoveg));
 		})
 	});	
@@ -687,7 +727,8 @@
 			<div id="containerCimkek" style="height: 70vh; width: 75vw"></div>
 		</figure>
 		<script>
-		function makeplotCimkek() {
+		async function makeplotCimkek() {
+			const helyreigazitasokdata = await getFromIndexedDB('dataStore', 'helyreigazitasokdata');
 			var options = {
 				chart: {
 					type: 'bar'
@@ -731,7 +772,7 @@
 				}]
 			};
 			
-			var tabres = JSON.parse(localStorage.getItem('helyreigazitasokdata')).data.map(x => x.Cimkek).flat();
+			var tabres = helyreigazitasokdata.data.map(x => x.Cimkek).flat();
 			tabres = Object.filter(tabres, value => value.PolitikaiPart <= document.getElementById('partokisCimkek').checked);
 			tabres = Object.entries(tabres).map(x => x[1].CimkeSzoveg);
 			tabres = tabres.reduce(function (acc, curr) {
@@ -763,7 +804,7 @@
 				<div id="containerCimkekIdoben" style="height: 65vh; width: 75vw"></div>
 			</figure>
 			<script>		
-			function makeplotCimkekIdoben() {
+			async function makeplotCimkekIdoben() {
 				var options = {
 				
 					chart: {
@@ -818,13 +859,13 @@
 					}
 				};
 				
-				var hiidata = JSON.parse(localStorage.getItem('helyreigidodata'));
-				var temp = Array(hiidata.length);
-				for(var i = 0; i<hiidata.length; i++) {
+				const helyreigidodata = await getFromIndexedDB('dataStore', 'helyreigidodata');
+				var temp = Array(helyreigidodata.length);
+				for(var i = 0; i<helyreigidodata.length; i++) {
 					temp[i] = {
-						name: hiidata[i].name,
-						data: hiidata[i].y,
-						visible: hiidata[i].OsszN >= document.getElementById('minhelyreigCimkekIdoben').value & hiidata[i].PolitikaiPart<= document.getElementById('partokisCimkekIdoben').checked ? true : false
+						name: helyreigidodata[i].name,
+						data: helyreigidodata[i].y,
+						visible: helyreigidodata[i].OsszN >= document.getElementById('minhelyreigCimkekIdoben').value & helyreigidodata[i].PolitikaiPart<= document.getElementById('partokisCimkekIdoben').checked ? true : false
 					};
 				}
 				options.series = temp;
@@ -844,7 +885,7 @@
 				<div id="containerKeses" style="height: 70vh; width: 75vw"></div>
 			</figure>			
 			<script>
-			function makeplotKeses() {
+			async function makeplotKeses() {
 				var options = {
 					chart: {
 						type: 'scatter'
@@ -890,7 +931,8 @@
 					}
 				};
 				
-				var res = Object.filter(JSON.parse(localStorage.getItem('helyreigazitasokdata')).data, value => value.KeszVan >= document.getElementById('csakkeszKeses').checked);					
+				const helyreigazitasokdata = await getFromIndexedDB('dataStore', 'helyreigazitasokdata');
+				var res = Object.filter(helyreigazitasokdata.data, value => value.KeszVan >= document.getElementById('csakkeszKeses').checked);					
 				res = Object.filter(res, value => value.Keses!='NA');
 				res = Object.values(res).map(a => {return {Keses: a.Keses/365, name: a.SajtotermekNev, CikkCim: a.CikkCim, CikkDatum: a.CikkDatum, HelyreigazitasDatum: a.HelyreigazitasDatum}});
 				var uniqueNames = [...new Set(res.map(x => x.name))];
@@ -926,7 +968,7 @@
 				<div id="containerJeloles" style="height: 70vh; width: 75vw"></div>
 			</figure>
 			<script>
-			function makeplotJeloles() {
+			async function makeplotJeloles() {
 				var options = {
 					chart: {
 						type: 'bar'
@@ -982,7 +1024,8 @@
 					}]
 				};
 				
-				var res = Object.values(JSON.parse(localStorage.getItem('helyreigazitasokdata')).data.reduce(function(m, d){						
+				const helyreigazitasokdata = await getFromIndexedDB('dataStore', 'helyreigazitasokdata');
+				var res = Object.values(helyreigazitasokdata.data.reduce(function(m, d){						
 					if(!m[d.SajtotermekNev]){
 					  m[d.SajtotermekNev] = {...d, ossz: d.HelyreigazitasJelolve=='NA' ? 0 : 1, jelolt: d.HelyreigazitasJelolve=='NA' ? 0 : 1};						  
 					  return m;
