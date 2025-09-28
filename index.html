@@ -376,7 +376,6 @@
 		await fetchAndStoreCompressedJSON('cszek.json.gz', 'dataStore', 'cszdata');
 
 		const helyreigazitasokdata = await getFromIndexedDB('dataStore', 'helyreigazitasokdata');
-		const helyreigidodata = await getFromIndexedDB('dataStore', 'helyreigidodata');
 		const cszdata = await getFromIndexedDB('dataStore', 'cszdata');
 		
 		var dt = $('#example').DataTable({
