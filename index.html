@@ -318,7 +318,7 @@
 	
 	async function storeInIndexedDB(storeName, key, value) {
 		return new Promise((resolve, reject) => {
-			const request = indexedDB.open('MyDatabase', 1);
+			const request = indexedDB.open('MyDatabase', 2);
 
 			request.onupgradeneeded = (event) => {
 				const db = event.target.result;
@@ -352,7 +352,7 @@
 	
 	function getFromIndexedDB(storeName, key) {
 		return new Promise((resolve, reject) => {
-			const request = indexedDB.open('MyDatabase', 1);
+			const request = indexedDB.open('MyDatabase', 2);
 
 			request.onsuccess = (event) => {
 				const db = event.target.result;
