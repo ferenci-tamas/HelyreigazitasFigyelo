@@ -86,7 +86,7 @@ stopwords <- c("állítottuk", "valótlanul", "cikkünkben", "megjelent", "napj�
                "december", "tényt", "tüntettük", "alperes", "felperes", "jóhírnévhez", "fűződő",
                "híresztelte", "rendű", "–", "látszatot", "keltettünk", "keltettük", "megsértettük",
                "mediaworks", "megállapítja", "megsértette", "kiadott", "bocsánatot", "kérünk",
-               "amiatt", "általa")
+               "amiatt", "általa", "wwwmagyarnemzethu")
 
 unique(temp$CimkeSzoveg)
 
@@ -97,7 +97,7 @@ cszek <- c("Juhász Péter", "Gyurcsány Ferenc", "Czeglédy Csaba", "Vona Gábo
            "Gyermekrák Alapítvány", "Bánó András", "Vasvári Csaba",
            "Sneider Tamás", "Hadházy Ákos", "Pikó András", "Soros György",
            "Magyar Péter", "Médiaszolgáltatás-támogató és Vagyonkezelő Alap (MTVA)",
-           "Telex.hu", "Kulcsár Krisztián")
+           "Telex.hu", "Kulcsár Krisztián", "Kis-Fleischmann Éva")
 
 setequal(cszek, unique(temp$CimkeSzoveg))
 
@@ -105,7 +105,7 @@ cszek <- merge(
   unique(temp[, .(CimkeSzoveg, CimkeID)]),
   data.table(CimkeSzoveg = cszek,
              size = c(0.3, 0.3, 0.5, 0.65, 0.45, 0.7, 0.5, 0.5, 0.7, 0.3, 0.6, 0.45, 0.7, 0.4,
-                      0.8, 0.3, 0.4, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)),
+                      0.8, 0.3, 0.4, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)),
   by = "CimkeSzoveg")
 
 jsonlite::write_json(list(data = cszek[, .(CimkeID, CimkeSzoveg)]), "cszek.json", na = "string")
